@@ -121,6 +121,11 @@ class SmartWaterMonitor extends IPSModule
             if (strpos($topic, $base) !== false) {
                 $value = floatval($payloadStr);
                 
+                // ESPHome sends 'nan' if a sensor is currently unavailable
+                if (!is_finite($value)) {
+                    return "OK";
+                }
+                
                 // Flow Rate
                 if (strpos($topic, 'flow') !== false || strpos($topic, 'rate') !== false) {
                     $this->SetValue('FlowRate', $value);
