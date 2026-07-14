@@ -162,6 +162,8 @@ class SmartWaterMonitor extends IPSModule
                     $lastRaw = $this->ReadAttributeFloat('LastRawTotal');
                     $delta = $value - $lastRaw;
                     
+                    IPS_LogMessage('SmartWaterMonitor', "DEBUG TOTAL | Value: $value | LastRaw: $lastRaw | Delta: $delta");
+                    
                     // If delta is negative, the ESP likely rebooted and started from 0 again.
                     // In this case, the delta is just the new value.
                     if ($delta < 0) {
@@ -174,6 +176,8 @@ class SmartWaterMonitor extends IPSModule
                     if ($delta > 0) {
                         $currentLiters = $this->GetValue('TotalConsumptionLiter');
                         $newLiters = $currentLiters + $delta;
+                        
+                        IPS_LogMessage('SmartWaterMonitor', "DEBUG TOTAL | CurrentLiters: $currentLiters | NewLiters: $newLiters");
                         
                         $this->SetValue('TotalConsumptionLiter', $newLiters);
                         $this->SetValue('TotalConsumption', $newLiters / 1000.0);
