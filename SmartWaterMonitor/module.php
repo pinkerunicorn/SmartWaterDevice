@@ -21,6 +21,7 @@ class SmartWaterMonitor extends IPSModule
         $this->RegisterVariableBoolean('WaterRunning', 'Wasser fließt');
         $this->RegisterVariableFloat('FlowRate', 'Aktueller Durchfluss');
         $this->RegisterVariableFloat('TotalConsumption', 'Gesamtverbrauch');
+        $this->RegisterVariableFloat('TotalConsumptionLiter', 'Gesamtverbrauch (Liter)');
 
         // Timer for Leak Detection
         $this->RegisterTimer('LeakTimer', 0, 'WATER_LeakTimerTriggered($_IPS[\'TARGET\']);');
@@ -85,6 +86,14 @@ class SmartWaterMonitor extends IPSModule
                 'ICON'         => 'Distance'
             ]);
         }
+
+        if (@IPS_GetObjectIDByIdent('TotalConsumptionLiter', $this->InstanceID) !== false) {
+            IPS_SetVariableCustomPresentation($this->GetIDForIdent('TotalConsumptionLiter'), [
+                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                'SUFFIX'       => ' l',
+                'ICON'         => 'Distance'
+            ]);
+        }
     }
 
     public function ReceiveData($JSONString)
@@ -142,6 +151,7 @@ class SmartWaterMonitor extends IPSModule
                 // Total Consumption
                 elseif (strpos($topic, 'total') !== false) {
                     $this->SetValue('TotalConsumption', $value);
+                    $this->SetValue('TotalConsumptionLiter', $value * 1000.0);
                 }
             }
             return "OK";
