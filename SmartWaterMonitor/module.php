@@ -23,6 +23,9 @@ class SmartWaterMonitor extends IPSModule
         $this->RegisterVariableFloat('TotalConsumption', 'Gesamtverbrauch');
         $this->RegisterVariableFloat('TotalConsumptionLiter', 'Gesamtverbrauch (Liter)');
 
+        // Attributes (internal state)
+        $this->RegisterAttributeFloat('LastRawTotal', 0.0);
+
         // Timer for Leak Detection
         $this->RegisterTimer('LeakTimer', 0, 'WATER_LeakTimerTriggered($_IPS[\'TARGET\']);');
     }
@@ -156,8 +159,25 @@ class SmartWaterMonitor extends IPSModule
                 
                 // Total Consumption (ESP sends Liters)
                 elseif (strpos($topic, 'total') !== false) {
-                    $this->SetValue('TotalConsumptionLiter', $value);
-                    $this->SetValue('TotalConsumption', $value / 1000.0);
+                    $lastRaw = $this->ReadAttributeFloat('LastRawTotal');
+                    $delta = $value - $lastRaw;
+                    
+                    // If delta is negative, the ESP likely rebooted and started from 0 again.
+                    // In this case, the delta is just the new value.
+                    if ($delta < 0) {
+                        $delta = $value;
+                    }
+                    
+                    $this->WriteAttributeFloat('LastRawTotal', $value);
+                    
+                    // Add delta to our persistent Symcon variables
+                    if ($delta > 0) {
+                        $currentLiters = $this->GetValue('TotalConsumptionLiter');
+                        $newLiters = $currentLiters + $delta;
+                        
+                        $this->SetValue('TotalConsumptionLiter', $newLiters);
+                        $this->SetValue('TotalConsumption', $newLiters / 1000.0);
+                    }
                 }
             }
             return "OK";
