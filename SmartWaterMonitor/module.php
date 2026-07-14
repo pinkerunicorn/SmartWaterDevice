@@ -106,9 +106,7 @@ class SmartWaterMonitor extends IPSModule
             }
 
             $topic = $data->Topic;
-            $payloadRaw = is_scalar($data->Payload) ? (string)$data->Payload : '';
-            // Decode hex string if it comes from Symcon MQTT Splitter
-            $payloadStr = (ctype_xdigit($payloadRaw) && !empty($payloadRaw)) ? hex2bin($payloadRaw) : $payloadRaw;
+            $payloadStr = is_scalar($data->Payload) ? (string)$data->Payload : '';
             
             $base = $this->ReadPropertyString('MQTTBaseTopic');
 
