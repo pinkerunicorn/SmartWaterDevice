@@ -103,10 +103,12 @@ class SmartWaterMonitor extends IPSModule
             
             if (!isset($data->Topic) || !isset($data->Payload)) {
                 return "NOK";
-            }
-
             $topic = $data->Topic;
-            $payloadStr = is_scalar($data->Payload) ? (string)$data->Payload : '';
+            $payloadRaw = is_scalar($data->Payload) ? (string)$data->Payload : '';
+            $payloadStr = $payloadRaw;
+            if (ctype_xdigit($payloadRaw) && strlen($payloadRaw) % 2 === 0) {
+                $payloadStr = hex2bin($payloadRaw);
+            }
             
             $base = $this->ReadPropertyString('MQTTBaseTopic');
 
