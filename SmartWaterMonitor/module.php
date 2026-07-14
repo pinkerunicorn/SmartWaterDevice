@@ -12,6 +12,7 @@ class SmartWaterMonitor extends IPSModule
         // Properties
         $this->RegisterPropertyString('MQTTBaseTopic', 'watermeter');
         $this->RegisterPropertyInteger('MaxContinuousFlowMinutes', 45); // 45 minutes default
+        $this->RegisterPropertyInteger('IrrigationVariableID', 0);
         
         $this->SetReceiveDataFilter('.*' . preg_quote($this->ReadPropertyString('MQTTBaseTopic')) . '.*');
 
@@ -49,6 +50,15 @@ class SmartWaterMonitor extends IPSModule
 
     public function LeakTimerTriggered(): void
     {
+        $irriVar = $this->ReadPropertyInteger('IrrigationVariableID');
+        if ($irriVar > 0 && @IPS_VariableExists($irriVar)) {
+            if (GetValue($irriVar)) {
+                // Bewässerung läuft, also keinen Alarm auslösen!
+                IPS_LogMessage('SmartWaterMonitor', 'Maximaler Dauerfluss erreicht, aber Bewässerung ist aktiv. Kein Alarm.');
+                return;
+            }
+        }
+        
         // Timer fired -> water running continuously for too long!
         $this->SetTimerInterval('LeakTimer', 0); // Stop timer
         $this->SetValue('LeakAlarm', true);

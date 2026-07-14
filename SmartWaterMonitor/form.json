@@ -12,6 +12,11 @@
             "minimum": 0,
             "maximum": 1440,
             "suffix": " min"
+        },
+        {
+            "type": "SelectVariable",
+            "name": "IrrigationVariableID",
+            "caption": "Bewässerungs-Status (Verhindert Alarm bei Bewässerung)"
         }
     ],
     "actions": [
