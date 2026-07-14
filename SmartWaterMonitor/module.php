@@ -148,10 +148,10 @@ class SmartWaterMonitor extends IPSModule
                     }
                 }
                 
-                // Total Consumption
+                // Total Consumption (ESP sends Liters)
                 elseif (strpos($topic, 'total') !== false) {
-                    $this->SetValue('TotalConsumption', $value);
-                    $this->SetValue('TotalConsumptionLiter', $value * 1000.0);
+                    $this->SetValue('TotalConsumptionLiter', $value);
+                    $this->SetValue('TotalConsumption', $value / 1000.0);
                 }
             }
             return "OK";
