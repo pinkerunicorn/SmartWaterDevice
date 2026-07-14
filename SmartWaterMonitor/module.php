@@ -103,6 +103,7 @@ class SmartWaterMonitor extends IPSModule
             
             if (!isset($data->Topic) || !isset($data->Payload)) {
                 return "NOK";
+            }
             $topic = $data->Topic;
             $payloadRaw = is_scalar($data->Payload) ? (string)$data->Payload : '';
             $payloadStr = $payloadRaw;
