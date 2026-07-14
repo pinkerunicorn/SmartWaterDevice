@@ -87,7 +87,7 @@ class SmartWaterMonitor extends IPSModule
         }
     }
 
-    public function ReceiveData(string $JSONString): string
+    public function ReceiveData($JSONString)
     {
         try {
             $data = json_decode($JSONString);
