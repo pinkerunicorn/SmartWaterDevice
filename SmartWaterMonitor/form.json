@@ -1,0 +1,23 @@
+{
+    "elements": [
+        {
+            "type": "ValidationTextBox",
+            "name": "MQTTBaseTopic",
+            "caption": "MQTT Base Topic (z.B. watermeter)"
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "MaxContinuousFlowMinutes",
+            "caption": "Leckage-Alarm nach x Minuten ununterbrochenem Wasserfluss",
+            "minimum": 0,
+            "maximum": 1440,
+            "suffix": " min"
+        }
+    ],
+    "actions": [
+        {
+            "type": "Label",
+            "caption": "Der Leckage-Alarm löst aus, wenn das Wasser ohne Pause länger fließt, als oben eingestellt (0 = Deaktiviert)."
+        }
+    ]
+}

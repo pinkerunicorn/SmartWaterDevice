@@ -1,0 +1,153 @@
+<?php
+
+declare(strict_types=1);
+
+class SmartWaterMonitor extends IPSModule
+{
+    public function Create(): void
+    {
+        // Never delete this line!
+        parent::Create();
+
+        // Properties
+        $this->RegisterPropertyString('MQTTBaseTopic', 'watermeter');
+        $this->RegisterPropertyInteger('MaxContinuousFlowMinutes', 45); // 45 minutes default
+        
+        $this->SetReceiveDataFilter('.*' . preg_quote($this->ReadPropertyString('MQTTBaseTopic')) . '.*');
+
+        // Variables
+        $this->RegisterVariableBoolean('Online', 'Online');
+        $this->RegisterVariableBoolean('LeakAlarm', 'Leckage-Alarm');
+        $this->RegisterVariableBoolean('WaterRunning', 'Wasser fließt');
+        $this->RegisterVariableFloat('FlowRate', 'Aktueller Durchfluss');
+        $this->RegisterVariableFloat('TotalConsumption', 'Gesamtverbrauch');
+
+        // Timer for Leak Detection
+        $this->RegisterTimer('LeakTimer', 0, 'WATER_LeakTimerTriggered($_IPS[\'TARGET\']);');
+    }
+
+    public function ApplyChanges(): void
+    {
+        // Never delete this line!
+        parent::ApplyChanges();
+
+        // Register MQTT Filter
+        $topic = $this->ReadPropertyString('MQTTBaseTopic');
+        $this->SetReceiveDataFilter('.*' . preg_quote($topic) . '.*');
+
+        // Apply Custom Presentations
+        $this->UpdatePresentations();
+    }
+
+    public function LeakTimerTriggered(): void
+    {
+        // Timer fired -> water running continuously for too long!
+        $this->SetTimerInterval('LeakTimer', 0); // Stop timer
+        $this->SetValue('LeakAlarm', true);
+        IPS_LogMessage('SmartWaterMonitor', 'LECKAGE-ALARM! Wasser fließt ununterbrochen seit ' . $this->ReadPropertyInteger('MaxContinuousFlowMinutes') . ' Minuten!');
+    }
+
+    private function UpdatePresentations(): void
+    {
+        if (@IPS_GetObjectIDByIdent('Online', $this->InstanceID) !== false) {
+            IPS_SetVariableCustomPresentation($this->GetIDForIdent('Online'), [
+                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                'ICON'         => 'Network'
+            ]);
+        }
+
+        if (@IPS_GetObjectIDByIdent('LeakAlarm', $this->InstanceID) !== false) {
+            IPS_SetVariableCustomPresentation($this->GetIDForIdent('LeakAlarm'), [
+                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                'ICON'         => 'Alert'
+            ]);
+        }
+
+        if (@IPS_GetObjectIDByIdent('WaterRunning', $this->InstanceID) !== false) {
+            IPS_SetVariableCustomPresentation($this->GetIDForIdent('WaterRunning'), [
+                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                'ICON'         => 'Drop'
+            ]);
+        }
+
+        if (@IPS_GetObjectIDByIdent('FlowRate', $this->InstanceID) !== false) {
+            IPS_SetVariableCustomPresentation($this->GetIDForIdent('FlowRate'), [
+                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                'SUFFIX'       => ' l/min',
+                'ICON'         => 'Speedo'
+            ]);
+        }
+
+        if (@IPS_GetObjectIDByIdent('TotalConsumption', $this->InstanceID) !== false) {
+            IPS_SetVariableCustomPresentation($this->GetIDForIdent('TotalConsumption'), [
+                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                'SUFFIX'       => ' m³',
+                'ICON'         => 'Distance'
+            ]);
+        }
+    }
+
+    public function ReceiveData(string $JSONString): string
+    {
+        try {
+            $data = json_decode($JSONString);
+            
+            if (!isset($data->Topic) || !isset($data->Payload)) {
+                return "NOK";
+            }
+
+            $topic = $data->Topic;
+            $payloadRaw = is_scalar($data->Payload) ? (string)$data->Payload : '';
+            // Decode hex string if it comes from Symcon MQTT Splitter
+            $payloadStr = (ctype_xdigit($payloadRaw) && !empty($payloadRaw)) ? hex2bin($payloadRaw) : $payloadRaw;
+            
+            $base = $this->ReadPropertyString('MQTTBaseTopic');
+
+            // Online status (LWT)
+            if ($topic === $base . '/status') {
+                $isOnline = (strtolower($payloadStr) === 'online');
+                $this->SetValue('Online', $isOnline);
+                return "OK";
+            }
+
+            // Sensor states
+            if (strpos($topic, $base) !== false) {
+                $value = floatval($payloadStr);
+                
+                // Flow Rate
+                if (strpos($topic, 'flow') !== false || strpos($topic, 'rate') !== false) {
+                    $this->SetValue('FlowRate', $value);
+                    
+                    if ($value > 0) {
+                        // Water started running
+                        if (!$this->GetValue('WaterRunning')) {
+                            $this->SetValue('WaterRunning', true);
+                            
+                            // Start Leak Timer if configured
+                            $maxMinutes = $this->ReadPropertyInteger('MaxContinuousFlowMinutes');
+                            if ($maxMinutes > 0) {
+                                $this->SetTimerInterval('LeakTimer', $maxMinutes * 60 * 1000);
+                            }
+                        }
+                    } else {
+                        // Water stopped running
+                        $this->SetValue('WaterRunning', false);
+                        $this->SetTimerInterval('LeakTimer', 0); // Stop timer
+                        // Optional: Reset Leak Alarm automatically when water stops?
+                        // Usually an alarm should be manually acknowledged, but let's reset it for convenience.
+                        $this->SetValue('LeakAlarm', false);
+                    }
+                }
+                
+                // Total Consumption
+                elseif (strpos($topic, 'total') !== false) {
+                    $this->SetValue('TotalConsumption', $value);
+                }
+            }
+            return "OK";
+        } catch (Exception $e) {
+            IPS_LogMessage('SmartWaterMonitor', 'Error in ReceiveData: ' . $e->getMessage());
+            return "NOK";
+        }
+    }
+}
