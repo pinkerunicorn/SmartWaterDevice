@@ -23,6 +23,10 @@ class SmartWaterMonitor extends IPSModule
         $this->RegisterVariableFloat('TotalConsumption', 'Gesamtverbrauch');
         $this->RegisterVariableFloat('TotalConsumptionLiter', 'Gesamtverbrauch (Liter)');
 
+        // Allow user to manually set the meter reading
+        $this->EnableAction('TotalConsumption');
+        $this->EnableAction('TotalConsumptionLiter');
+
         // Attributes (internal state)
         $this->RegisterAttributeFloat('LastRawTotal', 0.0);
 
@@ -184,6 +188,22 @@ class SmartWaterMonitor extends IPSModule
         } catch (Exception $e) {
             IPS_LogMessage('SmartWaterMonitor', 'Error in ReceiveData: ' . $e->getMessage());
             return "NOK";
+        }
+    }
+
+    public function RequestAction($Ident, $Value)
+    {
+        switch ($Ident) {
+            case 'TotalConsumption':
+                $this->SetValue('TotalConsumption', $Value);
+                $this->SetValue('TotalConsumptionLiter', $Value * 1000.0);
+                break;
+            case 'TotalConsumptionLiter':
+                $this->SetValue('TotalConsumptionLiter', $Value);
+                $this->SetValue('TotalConsumption', $Value / 1000.0);
+                break;
+            default:
+                throw new Exception("Invalid ident");
         }
     }
 }
