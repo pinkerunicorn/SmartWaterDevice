@@ -18,15 +18,19 @@ class SmartWaterMonitor extends IPSModule
 
         // Variables
         $this->RegisterVariableBoolean('Online', 'Online');
+        IPS_SetIcon($this->GetIDForIdent('Online'), 'Network');
         $this->RegisterVariableBoolean('LeakAlarm', 'Leckage-Alarm');
+        IPS_SetIcon($this->GetIDForIdent('LeakAlarm'), 'Warning');
         $this->RegisterVariableBoolean('WaterRunning', 'Wasser fließt');
+        IPS_SetIcon($this->GetIDForIdent('WaterRunning'), 'Drop');
         $this->RegisterVariableFloat('FlowRate', 'Aktueller Durchfluss');
+        IPS_SetIcon($this->GetIDForIdent('FlowRate'), 'Speedo');
         $this->RegisterVariableFloat('TotalConsumption', 'Gesamtverbrauch');
+        IPS_SetIcon($this->GetIDForIdent('TotalConsumption'), 'Drops');
         $this->RegisterVariableFloat('TotalConsumptionLiter', 'Gesamtverbrauch (Liter)');
+        IPS_SetIcon($this->GetIDForIdent('TotalConsumptionLiter'), 'Drops');
 
-        // Allow user to manually set the meter reading
-        $this->EnableAction('TotalConsumption');
-        $this->EnableAction('TotalConsumptionLiter');
+        // Variables are read-only
 
         // Attributes (internal state)
         $this->RegisterAttributeFloat('LastRawTotal', 0.0);
@@ -100,7 +104,7 @@ class SmartWaterMonitor extends IPSModule
             IPS_SetVariableCustomPresentation($this->GetIDForIdent('TotalConsumption'), [
                 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 'SUFFIX'       => ' m³',
-                'ICON'         => 'Distance'
+                'ICON'         => 'Drops'
             ]);
         }
 
@@ -108,7 +112,7 @@ class SmartWaterMonitor extends IPSModule
             IPS_SetVariableCustomPresentation($this->GetIDForIdent('TotalConsumptionLiter'), [
                 'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 'SUFFIX'       => ' l',
-                'ICON'         => 'Distance'
+                'ICON'         => 'Drops'
             ]);
         }
     }
