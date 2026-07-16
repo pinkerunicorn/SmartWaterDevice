@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-class SmartWaterMonitor extends IPSModule
+class SmartWaterMonitor extends IPSModuleStrict
 {
     public function Create(): void
     {
