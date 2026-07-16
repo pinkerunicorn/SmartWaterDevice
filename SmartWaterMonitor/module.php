@@ -117,7 +117,7 @@ class SmartWaterMonitor extends IPSModuleStrict
         }
     }
 
-    public function ReceiveData($JSONString)
+    public function ReceiveData(string $JSONString): string
     {
         try {
             $data = json_decode($JSONString);
@@ -205,7 +205,7 @@ class SmartWaterMonitor extends IPSModuleStrict
         }
     }
 
-    public function RequestAction($Ident, $Value)
+    public function RequestAction(string $Ident, $Value): void
     {
         switch ($Ident) {
             case 'TotalConsumption':
