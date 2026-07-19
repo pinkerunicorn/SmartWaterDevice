@@ -199,7 +199,7 @@ class SmartWaterMonitor extends IPSModuleStrict
                 }
             }
             return "OK";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             IPS_LogMessage('SmartWaterMonitor', 'Error in ReceiveData: ' . $e->getMessage());
             return "NOK";
         }
